@@ -14,6 +14,7 @@ const transactionsSlice = createSlice({
       return state.filter((t) => t.id !== action.payload);
     },
     setTransactions: (state, action: PayloadAction<Transaction[]>) => {
+      console.log(state);
       return action.payload;
     },
   },

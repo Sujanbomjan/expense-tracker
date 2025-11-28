@@ -29,7 +29,6 @@ import {
   TrendingUp,
   TrendingDown,
   DollarSign,
-  UserIcon,
   LogOut,
   Loader2,
   User,

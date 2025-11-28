@@ -15,6 +15,7 @@ const budgetSlice = createSlice({
       state[category] = amount;
     },
     setBudgets: (state, action: PayloadAction<Budget>) => {
+      console.log(state);
       return action.payload;
     },
   },
