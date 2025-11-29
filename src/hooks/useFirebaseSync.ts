@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAppSelector } from "@/store/store";
 import { useAuth } from "@/context/AuthContext";
 import { ref, update } from "firebase/database";
@@ -9,8 +9,20 @@ export function useFirebaseSync() {
   const transactions = useAppSelector((s) => s.transactions);
   const budgets = useAppSelector((s) => s.budgets);
   const currency = useAppSelector((s) => s.currency);
+
+  const prevDataRef = useRef<string>("");
+
   useEffect(() => {
     if (!user) return;
+
+    const currentData = JSON.stringify({
+      transactions,
+      budgets,
+      currency,
+    });
+
+    if (prevDataRef.current === currentData) return;
+    prevDataRef.current = currentData;
 
     const syncData = async () => {
       try {
@@ -29,7 +41,7 @@ export function useFirebaseSync() {
         console.error("Error syncing to Firebase:", error);
       }
     };
-    const timeoutId = setTimeout(syncData, 500);
+    const timeoutId = setTimeout(syncData, 1200);
 
     return () => clearTimeout(timeoutId);
   }, [user, transactions, budgets, currency]);

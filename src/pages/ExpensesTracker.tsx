@@ -50,36 +50,10 @@ export default function ExpenseTracker() {
   const [filterMonth, setFilterMonth] = useState(
     new Date().toISOString().slice(0, 7)
   );
-
   const { user, logout } = useAuth();
   const { loading: dbLoading, error: dbError } = useRealtimeDatabase();
+
   useFirebaseSync();
-
-  useEffect(() => {
-    dispatch(fetchRatesAsync(base));
-  }, [dispatch, base]);
-
-  const filteredTransactions = transactions.filter((t) =>
-    t.date.startsWith(filterMonth)
-  );
-
-  const stats = filteredTransactions.reduce(
-    (acc, t) => {
-      const amt = convertAmount(t.amount, t.currency || base, display, rates);
-      if (t.type === "expense") {
-        acc.totalExpenses += amt;
-        acc.byCategory[t.category] = (acc.byCategory[t.category] || 0) + amt;
-      } else {
-        acc.totalIncome += amt;
-      }
-      return acc;
-    },
-    {
-      totalExpenses: 0,
-      totalIncome: 0,
-      byCategory: {} as { [key: string]: number },
-    }
-  );
 
   useEffect(() => {
     dispatch(fetchRatesAsync(base));
@@ -104,6 +78,29 @@ export default function ExpenseTracker() {
     );
   }
 
+  const filteredTransactions = transactions.filter((t) =>
+    t.date.startsWith(filterMonth)
+  );
+
+  const stats = filteredTransactions.reduce(
+    (acc, t) => {
+      const amt = convertAmount(t.amount, t.currency || base, display, rates);
+
+      if (t.type === "expense") {
+        acc.totalExpenses += amt;
+        acc.byCategory[t.category] = (acc.byCategory[t.category] || 0) + amt;
+      } else {
+        acc.totalIncome += amt;
+      }
+      return acc;
+    },
+    {
+      totalExpenses: 0,
+      totalIncome: 0,
+      byCategory: {} as { [key: string]: number },
+    }
+  );
+
   const pieData: PieChartData[] = Object.entries(stats.byCategory).map(
     ([name, value]) => ({
       name,
@@ -119,6 +116,7 @@ export default function ExpenseTracker() {
     .slice(-6)
     .map((month) => {
       const monthTx = transactions.filter((t) => t.date.startsWith(month));
+
       const expenses = monthTx
         .filter((t) => t.type === "expense")
         .reduce(
@@ -126,6 +124,7 @@ export default function ExpenseTracker() {
             s + convertAmount(t.amount, t.currency || base, display, rates),
           0
         );
+
       const income = monthTx
         .filter((t) => t.type === "income")
         .reduce(
@@ -133,6 +132,7 @@ export default function ExpenseTracker() {
             s + convertAmount(t.amount, t.currency || base, display, rates),
           0
         );
+
       return { month, expenses, income };
     });
 
@@ -161,6 +161,7 @@ export default function ExpenseTracker() {
                 Track your finances with multi-currency support
               </p>
             </div>
+
             <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
               <div className="flex items-center gap-2 text-sm">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
@@ -170,7 +171,9 @@ export default function ExpenseTracker() {
                   {user?.displayName || user?.email}
                 </span>
               </div>
+
               <div className="w-px h-6 bg-gray-300"></div>
+
               <Button
                 variant="outline"
                 onClick={() => logout()}
@@ -181,6 +184,7 @@ export default function ExpenseTracker() {
               </Button>
             </div>
           </div>
+
           <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"
@@ -190,6 +194,7 @@ export default function ExpenseTracker() {
               <Wallet className="w-4 h-4" />
               Budgets
             </Button>
+
             <Button
               onClick={() => setIsAddOpen(true)}
               className="gap-2 cursor-pointer"
@@ -226,11 +231,13 @@ export default function ExpenseTracker() {
                   onChange={handleBaseCurrencyChange}
                   label="Base Currency"
                 />
+
                 <CurrencySelector
                   value={display}
                   onChange={(v) => dispatch(setDisplayCurrency(v))}
                   label="Display Currency"
                 />
+
                 <Button
                   variant="outline"
                   onClick={handleRefreshRates}
@@ -284,6 +291,7 @@ export default function ExpenseTracker() {
                   />
                 </div>
               </CardHeader>
+
               <CardContent>
                 <TransactionsList
                   transactions={filteredTransactions}
@@ -296,6 +304,7 @@ export default function ExpenseTracker() {
           </div>
 
           <aside className="space-y-4">
+            {/* Pie Chart */}
             <Card>
               <CardHeader>
                 <CardTitle>Expenses by Category</CardTitle>
@@ -321,6 +330,7 @@ export default function ExpenseTracker() {
             </Card>
           </aside>
         </div>
+
         <AddTransactionDialog
           open={isAddOpen}
           onClose={() => setIsAddOpen(false)}
