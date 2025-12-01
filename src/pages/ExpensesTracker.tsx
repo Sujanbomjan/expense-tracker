@@ -51,9 +51,13 @@ export default function ExpenseTracker() {
     new Date().toISOString().slice(0, 7)
   );
   const { user, logout } = useAuth();
-  const { loading: dbLoading, error: dbError } = useRealtimeDatabase();
+  const {
+    loading: dbLoading,
+    error: dbError,
+    isInitialLoadComplete,
+  } = useRealtimeDatabase();
 
-  useFirebaseSync();
+  useFirebaseSync(isInitialLoadComplete);
 
   useEffect(() => {
     dispatch(fetchRatesAsync(base));

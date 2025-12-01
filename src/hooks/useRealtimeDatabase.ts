@@ -12,10 +12,12 @@ export function useRealtimeDatabase() {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
 
   useEffect(() => {
     if (!user) {
       setLoading(false);
+      setIsInitialLoadComplete(true);
       return;
     }
 
@@ -27,14 +29,10 @@ export function useRealtimeDatabase() {
       (snapshot) => {
         const data = snapshot.val();
 
-        if (isInitialLoad) {
-          isInitialLoad = false;
-        }
-
         try {
-          if (data) {
-            const transactions = Array.isArray(data.transactions)
-              ? data.transactions
+          if (data && typeof data === "object") {
+            const transactions = data.transactions
+              ? (Object.values(data.transactions) as any[])
               : [];
 
             dispatch(setTransactions(transactions));
@@ -44,12 +42,14 @@ export function useRealtimeDatabase() {
               dispatch(setBaseCurrency(data.currency.base || "NPR"));
               dispatch(setDisplayCurrency(data.currency.display || "NPR"));
             }
-          } else {
+
+            setError(null);
+          } else if (isInitialLoad) {
             const initialData = {
               email: user.email,
               displayName: user.displayName,
               createdAt: new Date().toISOString(),
-              transactions: [],
+              transactions: {},
               budgets: {},
               currency: {
                 base: "NPR",
@@ -63,34 +63,33 @@ export function useRealtimeDatabase() {
           }
 
           setLoading(false);
-          setError(null);
+          setIsInitialLoadComplete(true);
+          isInitialLoad = false;
         } catch (err: any) {
           console.error("Error processing data:", err);
           setError("Failed to load data");
           setLoading(false);
+          setIsInitialLoadComplete(true);
         }
       },
       (err) => {
         console.error("Firebase listener error:", err);
 
-        let errorMessage = "Connection error";
-
         if (err.cause === "PERMISSION_DENIED") {
-          errorMessage = "Permission denied. Check database rules.";
-        } else if (err.message?.includes("network")) {
-          errorMessage = "Network error. Check your connection.";
+          setError("Permission denied. Check Firebase rules.");
+        } else {
+          setError("Network/Firebase connection error.");
         }
 
-        setError(errorMessage);
         setLoading(false);
+        setIsInitialLoadComplete(true);
       }
     );
 
     return () => {
-      console.log("Cleaning up Firebase listener");
       unsubscribe();
     };
   }, [user, dispatch]);
 
-  return { loading, error };
+  return { loading, error, isInitialLoadComplete };
 }

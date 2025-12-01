@@ -4,16 +4,27 @@ import { useAuth } from "@/context/AuthContext";
 import { ref, update } from "firebase/database";
 import { db } from "@/config/firebase";
 
-export function useFirebaseSync() {
+export function useFirebaseSync(isInitialLoadComplete: boolean) {
   const { user } = useAuth();
   const transactions = useAppSelector((s) => s.transactions);
   const budgets = useAppSelector((s) => s.budgets);
   const currency = useAppSelector((s) => s.currency);
 
   const prevDataRef = useRef<string>("");
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isInitialLoadComplete) return;
+
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      prevDataRef.current = JSON.stringify({
+        transactions,
+        budgets,
+        currency,
+      });
+      return;
+    }
 
     const currentData = JSON.stringify({
       transactions,
@@ -28,7 +39,9 @@ export function useFirebaseSync() {
       try {
         const userRef = ref(db, `users/${user.uid}`);
         await update(userRef, {
-          transactions,
+          transactions: Object.fromEntries(
+            transactions.map((tx) => [tx.id, tx])
+          ),
           budgets,
           currency: {
             base: currency.base,
@@ -41,8 +54,8 @@ export function useFirebaseSync() {
         console.error("Error syncing to Firebase:", error);
       }
     };
-    const timeoutId = setTimeout(syncData, 1200);
 
+    const timeoutId = setTimeout(syncData, 1200);
     return () => clearTimeout(timeoutId);
-  }, [user, transactions, budgets, currency]);
+  }, [user, transactions, budgets, currency, isInitialLoadComplete]);
 }
